@@ -10,7 +10,10 @@ const loadSchema = new mongoose.Schema(
     },
     pickupLocation: { type: String, required: true },
     deliveryLocation: { type: String, required: true },
-    companyToken: { type: String },
+    companyToken: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
     loadBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
