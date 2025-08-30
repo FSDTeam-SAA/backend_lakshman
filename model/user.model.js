@@ -1,21 +1,38 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema(
   {
     name: { type: String },
-    email: { type: String, unique: true },
-    password: { type: String, select: 0 },
-    username: { type: String, unique: true },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
+        "Please enter a valid email address",
+      ],
+    },
+    password: { type: String, select: 0, required: true },
+    username: { type: String, required: true, unique: true },
     phone: { type: String },
+    role: {
+      type: String,
+      default: "user",
+      enum: ["user", "driver", "dispatcher", "company", "admin"],
+    },
+    stripeAccountId: { type: String, default: "" },
+    isStripeOnboarded: { type: Boolean, default: false },
 
     avatar: {
       public_id: { type: String, default: "" },
       url: { type: String, default: "" },
     },
-
     address: {
-      type: String,
+      street: { type: String, default: "" },
+      city: { type: String, default: "" },
+      state: { type: String, default: "" },
+      zipCode: { type: String, default: "" },
     },
     verificationInfo: {
       verified: { type: Boolean, default: false },
@@ -23,12 +40,8 @@ const userSchema = new mongoose.Schema(
     },
     password_reset_token: { type: String, default: "" },
     refreshToken: { type: String, default: "" },
-    lastActive: { type: Date, default: Date.now },
-    deviceToken: { type: String },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 // Pre save middleware: Hash password
