@@ -1,14 +1,15 @@
 import AppError from "../errors/AppError.js";
 import { createToken, verifyToken } from "../utils/authToken.js";
 import catchAsync from "../utils/catchAsync.js";
-import { generateOTP } from "../utils/commonMethod.js";
+import { generateOTP, uploadOnCloudinary } from "../utils/commonMethod.js";
 import httpStatus from "http-status";
 import sendResponse from "../utils/sendResponse.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { User } from "./../model/user.model.js";
+import { Company } from "../model/company.model.js";
 
 export const register = catchAsync(async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, password, confirmPassword, role, uniqueCode } = req.body;
 
   if (!email || !password) {
     throw new AppError(httpStatus.FORBIDDEN, "Please fill in all fields");
@@ -27,12 +28,40 @@ export const register = catchAsync(async (req, res) => {
       "Email already exists, please try another email"
     );
 
+  if (role === "company") {
+    const checkCompany = await Company.findOne({ email: email });
+    if (checkCompany)
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Email already exists, please try another email"
+      );
+  }
+
+  const logo = req.file ? await uploadOnCloudinary(req.file.buffer) : null;
+
+  if (!logo) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
+  }
+
+  const imageUrl = logo ? logo.secure_url : null;
+
   const user = await User.create({
     name,
     email,
     password,
+    role,
     verificationInfo: { token: "", verified: true },
   });
+
+  if (role === "company") {
+    await Company.create({
+      owner: user._id,
+      name,
+      email,
+      uniqueCode,
+      logo: imageUrl,
+    });
+  }
 
   const jwtPayload = {
     _id: user._id,

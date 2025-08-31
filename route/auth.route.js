@@ -11,10 +11,11 @@ import {
   verifyEmail,
 } from "../controller/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
+import upload from "./../middleware/multer.middleware.js";
 
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/register", upload.single("logo"), register);
 router.post("/login", login);
 router.post("/verify", verifyEmail);
 router.post("/forget", forgetPassword);
