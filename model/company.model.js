@@ -16,6 +16,10 @@ const companySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
     },
+    isDefault : {
+      type : Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );
