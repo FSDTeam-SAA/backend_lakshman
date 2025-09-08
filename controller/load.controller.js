@@ -63,6 +63,91 @@ export const createLoad = catchAsync(async (req, res, next) => {
   });
 });
 
+export const getAllLoads = catchAsync(async (req, res) => {
+  const userId = req.user._id;
+  const loads = await Load.find({ loadBy: userId }).populate(
+    "companyToken loadBy"
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Loads retrieved successfully",
+    data: loads,
+  });
+});
+
+export const getLoadById = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const userId = req.user._id;
+
+  const load = await Load.findById({
+    _id: loadId,
+    loadBy: userId,
+  }).populate("companyToken loadBy");
+
+  if (!load) {
+    throw new AppError(httpStatus.NOT_FOUND, "Load not found");
+  }
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Load retrieved successfully",
+    data: load,
+  });
+});
+
+export const updateLoad = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const userId = req.user._id;
+
+  const { title, description, category, pickupLocation, deliveryLocation } =
+    req.body;
+
+  const load = await Load.findById({
+    _id: loadId,
+    loadBy: userId,
+  });
+
+  if (!load) {
+    throw new AppError(httpStatus.NOT_FOUND, "Load not found");
+  }
+
+  load.title = title;
+  load.description = description;
+  load.category = category;
+  load.pickupLocation = pickupLocation;
+  load.deliveryLocation = deliveryLocation;
+
+  await load.save();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Load updated successfully",
+    data: load,
+  });
+});
+
+export const deleteLoad = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const userId = req.user._id;
+
+  const load = await Load.findById({
+    _id: loadId,
+    loadBy: userId,
+  });
+  if (!load) {
+    throw new AppError(httpStatus.NOT_FOUND, "Load not found");
+  }
+  await load.remove();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Load deleted successfully",
+    data: null,
+  });
+});
+
 export const askPriceController = catchAsync(async (req, res) => {
   const { loadId } = req.params;
   const { askPrice } = req.body;
