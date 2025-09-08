@@ -3,6 +3,7 @@ import express from "express";
 import authRoute from "../route/auth.route.js";
 import userRoute from "../route/user.route.js";
 import companyRoute from "../route/company.route.js";
+import loadRoute from "../route/load.route.js";
 
 const router = express.Router();
 
@@ -10,5 +11,6 @@ const router = express.Router();
 router.use("/auth", authRoute);
 router.use("/user", userRoute);
 router.use("/company", companyRoute);
+router.use("/load", loadRoute);
 
 export default router;
