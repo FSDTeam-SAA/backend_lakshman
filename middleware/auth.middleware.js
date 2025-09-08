@@ -33,3 +33,24 @@ export const isDriver = (req, res, next) => {
   }
   next();
 };
+
+export const isDispatcher = (req, res, next) => {
+  if (req.user?.role !== "dispatcher") {
+    throw new AppError(403, "Access denied. You are not a dispatcher.");
+  }
+  next();
+};
+
+export const isCompany = (req, res, next) => {
+  if (req.user?.role !== "company") {
+    throw new AppError(403, "Access denied. You are not a company.");
+  }
+  next();
+};
+
+export const isUser = (req, res, next) => {
+  if (req.user?.role !== "user") {
+    throw new AppError(403, "Access denied. You are not a user.");
+  }
+  next();
+};
