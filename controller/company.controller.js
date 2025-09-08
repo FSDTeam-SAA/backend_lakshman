@@ -10,7 +10,9 @@ import { isValidObjectId } from "mongoose";
 import { uploadOnCloudinary } from "../utils/commonMethod.js";
 
 // Default password
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "Password@123";
+const DEFAULT_DRIVER_PASSWORD = process.env.DEFAULT_PASSWORD || "Driver@123";
+const DEFAULT_DISPATCHER_PASSWORD =
+  process.env.DEFAULT_PASSWORD || "Dispatcher@123";
 
 // Create Driver
 export const createDriver = catchAsync(async (req, res) => {
@@ -28,7 +30,7 @@ export const createDriver = catchAsync(async (req, res) => {
   const imageUrl = image ? image.secure_url : null;
 
   // Create user first
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hashedPassword = await bcrypt.hash(DEFAULT_DRIVER_PASSWORD, 10);
   const user = await User.create({
     name,
     email,
@@ -155,12 +157,20 @@ export const createDispatcher = catchAsync(async (req, res) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid company ID");
   }
 
+  // Check if user already exists with this email
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "User with this email already exists"
+    );
+  }
+
   // Create user first
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hashedPassword = await bcrypt.hash(DEFAULT_DISPATCHER_PASSWORD, 10);
   const user = await User.create({
     name,
     email,
-    username,
     phone,
     role: "dispatcher",
     password: hashedPassword,
@@ -172,11 +182,16 @@ export const createDispatcher = catchAsync(async (req, res) => {
     company,
   });
 
+  // Populate the created dispatcher
+  const populatedDispatcher = await Dispatcher.findById(
+    dispatcher._id
+  ).populate("user company");
+
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Dispatcher created successfully",
-    data: dispatcher,
+    data: populatedDispatcher,
   });
 });
 
@@ -198,11 +213,19 @@ export const getDispatchers = catchAsync(async (req, res) => {
 
 // Get single dispatcher
 export const getDispatcherById = catchAsync(async (req, res) => {
-  const dispatcher = await Dispatcher.findById(req.params.id).populate(
+  const { dispatcherId } = req.params;
+
+  if (!isValidObjectId(dispatcherId)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid dispatcher ID");
+  }
+
+  const dispatcher = await Dispatcher.findById(dispatcherId).populate(
     "user company"
   );
-  if (!dispatcher)
+
+  if (!dispatcher) {
     throw new AppError(httpStatus.NOT_FOUND, "Dispatcher not found");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -215,23 +238,16 @@ export const getDispatcherById = catchAsync(async (req, res) => {
 // Update dispatcher
 export const updateDispatcher = catchAsync(async (req, res) => {
   const { dispatcherId } = req.params;
-  const { name, email, phone } = req.body;
+  const { name, email, phone, company } = req.body;
 
   if (!isValidObjectId(dispatcherId)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid dispatcher ID");
   }
 
   const dispatcher = await Dispatcher.findById(dispatcherId);
-  if (!dispatcher)
+  if (!dispatcher) {
     throw new AppError(httpStatus.NOT_FOUND, "Dispatcher not found");
-
-  const image = req.file ? await uploadOnCloudinary(req.file.buffer) : null;
-
-  if (!image) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
   }
-
-  const imageUrl = image ? image.secure_url : null;
 
   // Update User fields if provided
   const user = await User.findById(dispatcher.user);
@@ -243,28 +259,39 @@ export const updateDispatcher = catchAsync(async (req, res) => {
   await user.save();
 
   // Update Dispatcher fields
-  if (imageUrl) dispatcher.drivingLicense = imageUrl;
   if (company) dispatcher.company = company;
 
   await dispatcher.save();
+
+  // Get updated dispatcher with populated data
+  const updatedDispatcher = await Dispatcher.findById(dispatcherId).populate(
+    "user company"
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Dispatcher updated successfully",
-    data: dispatcher,
+    data: updatedDispatcher,
   });
 });
 
 // Delete dispatcher
 export const deleteDispatcher = catchAsync(async (req, res) => {
-  const dispatcher = await Dispatcher.findById(req.params.id);
-  if (!dispatcher)
+  const { dispatcherId } = req.params;
+
+  if (!isValidObjectId(dispatcherId)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid dispatcher ID");
+  }
+
+  const dispatcher = await Dispatcher.findById(dispatcherId);
+  if (!dispatcher) {
     throw new AppError(httpStatus.NOT_FOUND, "Dispatcher not found");
+  }
 
   // Delete related user
   await User.findByIdAndDelete(dispatcher.user);
-  await dispatcher.remove();
+  await Dispatcher.findByIdAnd;
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

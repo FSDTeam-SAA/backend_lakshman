@@ -95,18 +95,32 @@ export const register = catchAsync(async (req, res) => {
 });
 
 export const login = catchAsync(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
+
+  if (!role) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Role is required for login");
+  }
+
   const user = await User.isUserExistsByEmail(email);
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
+
+  if (user.role !== role) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      `You are not registered as a ${role}. Please select the correct role.`
+    );
+  }
+
   if (
     user?.password &&
     !(await User.isPasswordMatched(password, user.password))
   ) {
     throw new AppError(httpStatus.FORBIDDEN, "Password is not correct");
   }
-  if (!(await User.isOTPVerified(user._id))) {
+
+  if (user.role === "user" && !(await User.isOTPVerified(user._id))) {
     const otp = generateOTP();
     const jwtPayloadOTP = {
       otp: otp,
@@ -119,7 +133,7 @@ export const login = catchAsync(async (req, res) => {
     );
     user.verificationInfo.token = otptoken;
     await user.save();
-    await sendEmail(user.email, "Registerd Account", `Your OTP is ${otp}`);
+    await sendEmail(user.email, "Registered Account", `Your OTP is ${otp}`);
 
     return sendResponse(res, {
       statusCode: httpStatus.FORBIDDEN,
@@ -128,11 +142,13 @@ export const login = catchAsync(async (req, res) => {
       data: { email: user.email },
     });
   }
+
   const jwtPayload = {
     _id: user._id,
     email: user.email,
     role: user.role,
   };
+
   const accessToken = createToken(
     jwtPayload,
     process.env.JWT_ACCESS_SECRET,
@@ -146,7 +162,7 @@ export const login = catchAsync(async (req, res) => {
   );
 
   user.refreshToken = refreshToken;
-  let _user = await user.save();
+  await user.save();
 
   res.cookie("refreshToken", refreshToken, {
     secure: true,
@@ -158,7 +174,9 @@ export const login = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User Logged in successfully",
+    message: `${
+      role.charAt(0).toUpperCase() + role.slice(1)
+    } logged in successfully`,
     data: {
       accessToken,
       refreshToken: refreshToken,
