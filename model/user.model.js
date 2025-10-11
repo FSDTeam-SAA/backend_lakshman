@@ -21,7 +21,6 @@ const userSchema = new Schema(
       select: false,
       default: "",
     },
-    username: { type: String, unique: true },
     phone: { type: String },
     role: {
       type: String,
