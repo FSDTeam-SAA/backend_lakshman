@@ -4,10 +4,11 @@ const loadSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-    },
+    category: { type: String },
+    // category: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Category",
+    // },
     pickupLocation: { type: String, required: true },
     deliveryLocation: { type: String, required: true },
     companyToken: {

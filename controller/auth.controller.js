@@ -39,9 +39,9 @@ export const register = catchAsync(async (req, res) => {
 
   const logo = req.file ? await uploadOnCloudinary(req.file.buffer) : null;
 
-  if (!logo) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
-  }
+  // if (!logo) {
+  //   throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
+  // }
 
   const imageUrl = logo ? logo.secure_url : null;
 
