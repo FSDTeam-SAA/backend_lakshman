@@ -13,7 +13,15 @@ const userSchema = new Schema(
         "Please enter a valid email address",
       ],
     },
-    password: { type: String, select: 0, required: true },
+    password: {
+      type: String,
+      select: 0,
+      minlength: 6,
+      trim: true,
+      select: false,
+      default: "",
+    },
+    username: { type: String, unique: true },
     phone: { type: String },
     role: {
       type: String,
