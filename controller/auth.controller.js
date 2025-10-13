@@ -39,10 +39,6 @@ export const register = catchAsync(async (req, res) => {
 
   const logo = req.file ? await uploadOnCloudinary(req.file.buffer) : null;
 
-  // if (!logo) {
-  //   throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
-  // }
-
   const imageUrl = logo ? logo.secure_url : null;
 
   const user = await User.create({
@@ -95,22 +91,18 @@ export const register = catchAsync(async (req, res) => {
 });
 
 export const login = catchAsync(async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password } = req.body;
 
-  if (!role) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Role is required for login");
+  if (!email || !password) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Email and password are required"
+    );
   }
 
   const user = await User.isUserExistsByEmail(email);
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
-  }
-
-  if (user.role !== role) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      `You are not registered as a ${role}. Please select the correct role.`
-    );
   }
 
   if (
@@ -120,19 +112,20 @@ export const login = catchAsync(async (req, res) => {
     throw new AppError(httpStatus.FORBIDDEN, "Password is not correct");
   }
 
+  // OTP verification for user accounts (optional)
   if (user.role === "user" && !(await User.isOTPVerified(user._id))) {
     const otp = generateOTP();
-    const jwtPayloadOTP = {
-      otp: otp,
-    };
+    const jwtPayloadOTP = { otp };
 
     const otptoken = createToken(
       jwtPayloadOTP,
       process.env.OTP_SECRET,
       process.env.OTP_EXPIRE
     );
+
     user.verificationInfo.token = otptoken;
     await user.save();
+
     await sendEmail(user.email, "Registered Account", `Your OTP is ${otp}`);
 
     return sendResponse(res, {
@@ -174,15 +167,13 @@ export const login = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${
-      role.charAt(0).toUpperCase() + role.slice(1)
-    } logged in successfully`,
+    message: "Login successful",
     data: {
       accessToken,
-      refreshToken: refreshToken,
+      refreshToken,
       role: user.role,
       _id: user._id,
-      user: user,
+      user,
     },
   });
 });
