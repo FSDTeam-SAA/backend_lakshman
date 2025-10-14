@@ -37,10 +37,7 @@ const userSchema = new Schema(
       url: { type: String, default: "" },
     },
     address: {
-      street: { type: String, default: "" },
-      city: { type: String, default: "" },
-      state: { type: String, default: "" },
-      zipCode: { type: String, default: "" },
+      type: String,
     },
     verificationInfo: {
       verified: { type: Boolean, default: false },

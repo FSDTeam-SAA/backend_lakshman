@@ -80,7 +80,14 @@ export const updateProfile = catchAsync(async (req, res, next) => {
 
   switch (role) {
     case "user":
-      allowedFields = ["name", "email", "phone", "address", "dob", "nationality"];
+      allowedFields = [
+        "name",
+        "email",
+        "phone",
+        "address",
+        "dob",
+        "nationality",
+      ];
       imageField = "avatar";
       break;
 
