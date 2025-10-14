@@ -22,6 +22,8 @@ const userSchema = new Schema(
       default: "",
     },
     phone: { type: String },
+    dob: { type: String },
+    nationality: { type: String },
     role: {
       type: String,
       default: "user",
