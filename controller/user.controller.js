@@ -32,26 +32,26 @@ export const getProfile = catchAsync(async (req, res, next) => {
     case "company":
       profile = await Company.findOne({ owner: userId }).populate(
         "owner",
-        "name email profileImage"
+        "-password -refreshToken"
       );
       break;
 
     case "dispatcher":
       profile = await Dispatcher.findOne({ user: userId })
-        .populate("user", "name email profileImage")
+        .populate("user", "-password -refreshToken")
         .populate("company", "name email logo");
       break;
 
     case "driver":
       profile = await Driver.findOne({ user: userId })
-        .populate("user", "name email profileImage")
+        .populate("user", "-password -refreshToken")
         .populate("company", "name email logo");
       break;
 
     case "admin":
       profile = await Admin.findById(userId).populate(
         "user",
-        "name email profileImage"
+        "-password -refreshToken"
       );
       break;
 
