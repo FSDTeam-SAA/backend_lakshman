@@ -3,6 +3,7 @@ import { Load } from "../model/load.model.js";
 import { Company } from "../model/company.model.js"; // Assuming you have the company model
 import sendResponse from "../utils/sendResponse.js";
 import AppError from "../errors/AppError.js";
+import httpStatus from "http-status";
 
 export const createLoad = catchAsync(async (req, res, next) => {
   const {
