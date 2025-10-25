@@ -6,9 +6,13 @@ const paymentInfoSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "User",
     },
-    orderId: {
+    planId: {
       type: mongoose.Types.ObjectId,
-      ref: "Order",
+      ref: "SubscriptionPlan",
+    },
+    loadId: {
+      type: mongoose.Types.ObjectId,
+      ref: "Load",
     },
     price: { type: Number, required: true },
     paymentStatus: {
@@ -20,9 +24,9 @@ const paymentInfoSchema = new mongoose.Schema(
     transactionId: { type: String },
     paymentMethodNonce: { type: String },
     paymentMethod: { type: String },
-    type: { type: String ,
-        enum: ['donation','order']
-    },
+    // type: { type: String ,
+    //     enum: ['donation','order']
+    // },
   },
   {
     timestamps: true,

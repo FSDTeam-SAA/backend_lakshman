@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 })
 
 export const createPayment = async (req, res) => {
-  const { userId, price, orderId, type } = req.body
+  const { userId, price, planId, type, loadId } = req.body
 
   if (!price || !type) {
     return res.status(400).json({
@@ -23,15 +23,17 @@ export const createPayment = async (req, res) => {
       currency: 'usd',
       metadata: {
         userId,
-        orderId,
+        planId,
         type,
+        loadId
       },
     })
 
     // Save payment record with status 'pending'
     const PaymentInfo = new paymentInfo({
       userId,
-      orderId,
+      planId,
+      loadId,
       price,
       transactionId: paymentIntent.id,
       paymentStatus: 'pending',
@@ -41,7 +43,7 @@ export const createPayment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      clientSecret: paymentIntent.client_secret,
+      data: {clientSecret: paymentIntent.client_secret,},
       message: 'PaymentIntent created.',
     })
   } catch (error) {
@@ -77,8 +79,8 @@ export const createPayment = async (req, res) => {
 //       { new: true }
 //     )
 
-//     if (paymentRecord?.orderId) {
-//       const order = await Order.findByIdAndUpdate(paymentRecord.orderId, {
+//     if (paymentRecord?.planId) {
+//       const order = await Order.findByIdAndUpdate(paymentRecord.planId, {
 //         paymentStatus: 'paid',
 //       }).populate('farm', 'seller')
 
@@ -157,45 +159,45 @@ export const confirmPayment = async (req, res) => {
       return res.status(404).json({ error: 'Payment record not found in database.' })
     }
 
-    // Handle order-related updates and transfers
-    if (paymentRecord.orderId) {
-      const order = await Order.findByIdAndUpdate(
-        paymentRecord.orderId,
-        { paymentStatus: 'paid' },
-        { new: true }
-      ).populate('farm', 'seller')
+    // // Handle order-related updates and transfers
+    // if (paymentRecord.planId) {
+    //   const order = await Order.findByIdAndUpdate(
+    //     paymentRecord.planId,
+    //     { paymentStatus: 'paid' },
+    //     { new: true }
+    //   ).populate('farm', 'seller')
 
-      if (!order || !order.farm || !order.farm.seller) {
-        return res.status(404).json({ error: 'Associated order or seller not found.' })
-      }
+    //   if (!order || !order.farm || !order.farm.seller) {
+    //     return res.status(404).json({ error: 'Associated order or seller not found.' })
+    //   }
 
-      const sellerUser = await User.findById(order.farm.seller)
+    //   const sellerUser = await User.findById(order.farm.seller)
 
-      if (!sellerUser?.stripeAccountId) {
-        return res.status(400).json({ error: 'Seller has not connected their Stripe account.' })
-      }
+    //   if (!sellerUser?.stripeAccountId) {
+    //     return res.status(400).json({ error: 'Seller has not connected their Stripe account.' })
+    //   }
 
-      const amountInCents = Math.round(paymentRecord.price * 100)
-      const adminShare = Math.round(amountInCents * 0.049) // 4.9%
-      const sellerShare = amountInCents - adminShare
+    //   const amountInCents = Math.round(paymentRecord.price * 100)
+    //   const adminShare = Math.round(amountInCents * 0.049) // 4.9%
+    //   const sellerShare = amountInCents - adminShare
 
-      try {
-        const transfer = await stripe.transfers.create({
-          amount: sellerShare,
-          currency: 'usd',
-          destination: sellerUser.stripeAccountId,
-          transfer_group: `ORDER_${paymentIntentId}`,
-        })
-        console.log(transfer)
+    //   try {
+    //     const transfer = await stripe.transfers.create({
+    //       amount: sellerShare,
+    //       currency: 'usd',
+    //       destination: sellerUser.stripeAccountId,
+    //       transfer_group: `ORDER_${paymentIntentId}`,
+    //     })
+    //     console.log(transfer)
 
-        if (!transfer ) {
-          return res.status(500).json({ error: 'Transfer to seller failed.' })
-        }
-      } catch (transferError) {
-        console.error('Stripe transfer error:', transferError)
-        return res.status(500).json({ error: 'Error while transferring funds to seller.' })
-      }
-    }
+    //     if (!transfer ) {
+    //       return res.status(500).json({ error: 'Transfer to seller failed.' })
+    //     }
+    //   } catch (transferError) {
+    //     console.error('Stripe transfer error:', transferError)
+    //     return res.status(500).json({ error: 'Error while transferring funds to seller.' })
+    //   }
+    // }
 
     return res.status(200).json({
       success: true,

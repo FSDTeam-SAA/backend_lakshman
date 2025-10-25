@@ -5,6 +5,7 @@ import userRoute from "../route/user.route.js";
 import companyRoute from "../route/company.route.js";
 import loadRoute from "../route/load.route.js";
 import paymentRoute from "../route/payment.route.js";
+import planRoute from "../route/plan.route.js";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use("/user", userRoute);
 router.use("/company", companyRoute);
 router.use("/load", loadRoute);
 router.use("/payment", paymentRoute);
+router.use("/plan", planRoute);
 
 export default router;
