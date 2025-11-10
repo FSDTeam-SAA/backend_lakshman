@@ -7,7 +7,7 @@ const driverSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    drivingLicense: { type: String, required: true },
+    drivingLicense: { type: String},
     avatar: { type: String },
     company: {
       type: mongoose.Schema.Types.ObjectId,
