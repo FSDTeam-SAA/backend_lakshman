@@ -22,21 +22,22 @@ export const createDriver = catchAsync(async (req, res) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid company ID");
   }
 
-  const image = req.file ? await uploadOnCloudinary(req.file.buffer) : null;
-  if (!image) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
-  }
+  const image = null
+  // req.file ? await uploadOnCloudinary(req.file.buffer) : null;
+  // if (!image) {
+  //   throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
+  // }
 
   const imageUrl = image ? image.secure_url : null;
 
   // Create user first
-  const hashedPassword = await bcrypt.hash(DEFAULT_DRIVER_PASSWORD, 10);
+  // const hashedPassword = await bcrypt.hash(DEFAULT_DRIVER_PASSWORD, 10);
   const user = await User.create({
     name,
     email,
     phone,
     role: "driver",
-    password: hashedPassword,
+    password: DEFAULT_DRIVER_PASSWORD,
     verificationInfo: { token: "", verified: true },
   });
 
@@ -167,13 +168,13 @@ export const createDispatcher = catchAsync(async (req, res) => {
   }
 
   // Create user first
-  const hashedPassword = await bcrypt.hash(DEFAULT_DISPATCHER_PASSWORD, 10);
+  // const hashedPassword = await bcrypt.hash(DEFAULT_DISPATCHER_PASSWORD, 10);
   const user = await User.create({
     name,
     email,
     phone,
     role: "dispatcher",
-    password: hashedPassword,
+    password: DEFAULT_DISPATCHER_PASSWORD,
     verificationInfo: { token: "", verified: true },
   });
 
