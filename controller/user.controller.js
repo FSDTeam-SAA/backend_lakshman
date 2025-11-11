@@ -7,6 +7,7 @@ import catchAsync from "../utils/catchAsync.js";
 import { Company } from "../model/company.model.js";
 import { Dispatcher } from "../model/dispatcher.model.js";
 import { Driver } from "../model/driver.model.js";
+import { Load } from "../model/load.model.js";
 
 const pickAllowedFields = (obj, allowedFields) => {
   const filtered = {};
@@ -23,29 +24,153 @@ export const getProfile = catchAsync(async (req, res, next) => {
   const { role } = req.user;
 
   let profile = null;
+  let dashboard = null
 
   switch (role) {
     case "user":
       profile = await User.findById(userId).select("-password -refreshToken");
       break;
 
-    case "company":
-      profile = await Company.findOne({ owner: userId }).populate(
-        "owner",
-        "-password -refreshToken"
+    case "company": {
+      // 1️⃣ Get company info
+      const company = await Company.findOne({ owner: userId })
+        .populate("owner", "-password -refreshToken");
+
+      if (!company) throw new AppError(404, "Company not found");
+
+      const companyId = company._id;
+
+      // 2️⃣ Dashboard calculations
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Today's delivered loads
+      const todaysDelivered = await Load.find({
+        companyToken: companyId,
+        orderStatus: "delivered",
+        createdAt: { $gte: today },
+      });
+
+      const todaysDelivery = todaysDelivered.length;
+      const todaysEarnings = todaysDelivered.reduce(
+        (sum, load) => sum + (load.askPrice || 0),
+        0
       );
+
+      // Active drivers (if you have Driver model)
+      const activeDrivers = await Driver.countDocuments({
+        company: companyId,
+      });
+
+      // Running loads
+      const runningStatuses = [
+        "processing",
+        "pickup",
+        "on_the_way",
+        "driver_pending",
+      ];
+      const runningLoads = await Load.countDocuments({
+        companyToken: companyId,
+        orderStatus: { $in: runningStatuses },
+      });
+
+      // Weekly revenue
+      const last7Days = new Date();
+      last7Days.setDate(today.getDate() - 6);
+
+      const weeklyRevenue = await Load.aggregate([
+        {
+          $match: {
+            companyToken: companyId,
+            orderStatus: "delivered",
+            createdAt: { $gte: last7Days },
+          },
+        },
+        {
+          $group: {
+            _id: { $dayOfWeek: "$createdAt" },
+            total: { $sum: "$askPrice" },
+          },
+        },
+        { $sort: { "_id": 1 } },
+      ]);
+
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const revenue = weeklyRevenue.map((r) => ({
+        day: dayNames[r._id - 1],
+        value: r.total,
+      }));
+
+      dashboard = {
+        todaysDelivery,
+        todaysEarnings,
+        activeDrivers,
+        runningLoads,
+        revenue,
+      };
+
+      profile = { ...company.toObject(), dashboard };
       break;
+    }
 
     case "dispatcher":
-      profile = await Dispatcher.findOne({ user: userId })
+      const dispatcher = await Dispatcher.findOne({ user: userId })
         .populate("user", "-password -refreshToken")
         .populate("company", "name email logo");
+
+      if (!dispatcher) throw new AppError(404, "Dispatcher not found");
+
+      const companyId = dispatcher.company?._id;
+
+      // Dashboard stats
+      const pendingRequests = await Load.countDocuments({
+        companyToken: companyId,
+        orderStatus: "pending",
+      });
+
+      const readyToLoad = await Load.countDocuments({
+        companyToken: companyId,
+        orderStatus: { $in: ["processing", "pickup"] },
+      });
+
+      const availableDrivers = await Driver.countDocuments({
+        company: companyId,
+      });
+
+      dashboard = {
+        pendingRequests,
+        readyToLoad,
+        availableDrivers,
+      };
+
+      profile = { ...dispatcher.toObject(), dashboard };
       break;
 
-    case "driver":
-      profile = await Driver.findOne({ user: userId })
+        case "driver":
+      const driver = await Driver.findOne({ user: userId })
         .populate("user", "-password -refreshToken")
         .populate("company", "name email logo");
+
+      if (!driver) throw new AppError(404, "Driver not found");
+
+      // All loads assigned to this driver
+      const assignedLoads = await Load.find({ driver: userId }).sort({
+        createdAt: -1,
+      });
+
+      // Current active load (not yet delivered)
+      const currentLoad = await Load.findOne({
+        driver: userId,
+        orderStatus: { $nin: ["delivered", "driver_delivered"] },
+      }).sort({ createdAt: -1 });
+
+      dashboard = {
+        totalAssigned: assignedLoads.length,
+        currentLoad,
+        recentLoads: assignedLoads,
+      };
+
+      profile = { ...driver.toObject(), dashboard };
       break;
 
     case "admin":
