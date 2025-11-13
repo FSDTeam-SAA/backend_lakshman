@@ -292,7 +292,7 @@ export const deleteDispatcher = catchAsync(async (req, res) => {
 
   // Delete related user
   await User.findByIdAndDelete(dispatcher.user);
-  await Dispatcher.findByIdAnd;
+  await Dispatcher.findByIdAndDelete(dispatcher);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
