@@ -41,7 +41,7 @@ const loadSchema = new mongoose.Schema(
         // Ask price workflow
         "ask_pending", // waiting for user to ask price
         "asked", // price requested
-        "accepted", // price accepted
+        "+", // price accepted
         "rejected", // price rejected
       ],
       default: "pending",

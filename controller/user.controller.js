@@ -64,6 +64,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
 
       // Running loads
       const runningStatuses = [
+        "pending",
         "processing",
         "pickup",
         "on_the_way",
@@ -77,6 +78,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
       // Weekly revenue
       const last7Days = new Date();
       last7Days.setDate(today.getDate() - 6);
+      console.log(last7Days);
 
       const weeklyRevenue = await Load.aggregate([
         {
@@ -94,6 +96,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
         },
         { $sort: { "_id": 1 } },
       ]);
+      console.log(weeklyRevenue);
 
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const revenue = weeklyRevenue.map((r) => ({
