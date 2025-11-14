@@ -140,7 +140,7 @@ export const deleteDriver = catchAsync(async (req, res) => {
 
   // Delete related user
   await User.findByIdAndDelete(driver.user);
-  await driver.remove();
+  await Driver.findByIdAndDelete(driverId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
