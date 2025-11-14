@@ -200,6 +200,8 @@ export const updateProfile = catchAsync(async (req, res, next) => {
   const userId = req.user._id;
   const { role } = req.user;
 
+  console.log("updateProfile" , req.body);
+
   let allowedFields = [];
   let imageField = null;
 
