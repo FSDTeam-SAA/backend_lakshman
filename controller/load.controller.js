@@ -4,6 +4,8 @@ import { Company } from "../model/company.model.js"; // Assuming you have the co
 import sendResponse from "../utils/sendResponse.js";
 import AppError from "../errors/AppError.js";
 import httpStatus from "http-status";
+import { Dispatcher } from "../model/dispatcher.model.js";
+import { Driver } from "../model/driver.model.js";
 
 export const createLoad = catchAsync(async (req, res, next) => {
   const {
@@ -65,10 +67,45 @@ export const createLoad = catchAsync(async (req, res, next) => {
 });
 
 export const getAllLoads = catchAsync(async (req, res) => {
+  const { search } = req.query;
   const userId = req.user._id;
-  const loads = await Load.find({ loadBy: userId }).populate(
-    "companyToken loadBy"
-  );
+  const role = req.user.role;
+
+  const filter = {};
+
+  if (role === "dispatcher") {
+    const dispatcher = await Dispatcher.findOne({ user: userId });
+    if (!dispatcher) {
+      throw new AppError(httpStatus.NOT_FOUND, "Dispatcher not found");
+    }
+    filter.companyToken = dispatcher.company;
+  }
+
+  if (role === "driver") {
+    filter.driver = userId;
+  }
+
+  if (role === "company") {
+    const company = await Company.findOne({ owner: userId });
+    if (!company) {
+      throw new AppError(httpStatus.NOT_FOUND, "Company not found");
+    }
+    filter.companyToken = company._id;
+  }
+
+  if (role === "user") {
+    filter.loadBy = userId;
+  }
+
+  if (search) {
+    filter.$or = [
+      { companyToken: search },
+      { driver: search },
+      { loadBy: search },
+    ];
+  }
+
+  const loads = await Load.find(filter).populate("companyToken loadBy");
   sendResponse(res, {
     statusCode: 200,
     success: true,
