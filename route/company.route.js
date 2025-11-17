@@ -10,6 +10,8 @@ import {
   getDrivers,
   updateDispatcher,
   updateDriver,
+  allCompany,
+  getDashboardData
 } from "../controller/company.controller.js";
 import { protect, isCompany } from "../middleware/auth.middleware.js";
 import upload from "../middleware/multer.middleware.js";
@@ -19,6 +21,8 @@ router.use(protect, isCompany);
 
 router.post("/create-driver", upload.single("avatar"), createDriver);
 router.get("/driver", getDrivers);
+router.get("/dashboard", getDashboardData);
+router.get("/all-company", allCompany);
 router.get("/driver/:driverId", getDriverById);
 router.patch("/driver/:driverId", upload.single("avatar"), updateDriver);
 router.delete("/driver/:driverId", deleteDriver);

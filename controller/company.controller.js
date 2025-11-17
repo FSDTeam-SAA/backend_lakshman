@@ -1,5 +1,6 @@
 import { Driver } from "../model/driver.model.js";
 import { Dispatcher } from "../model/dispatcher.model.js";
+import { paymentInfo } from "../model/payment.model.js";
 import { User } from "../model/user.model.js";
 import httpStatus from "http-status";
 import AppError from "../errors/AppError.js";
@@ -8,6 +9,7 @@ import catchAsync from "../utils/catchAsync.js";
 import bcrypt from "bcryptjs";
 import { isValidObjectId } from "mongoose";
 import { uploadOnCloudinary } from "../utils/commonMethod.js";
+import { Company } from "../model/company.model.js";
 
 // Default password
 const DEFAULT_DRIVER_PASSWORD = process.env.DEFAULT_PASSWORD || "Driver@123";
@@ -299,5 +301,96 @@ export const deleteDispatcher = catchAsync(async (req, res) => {
     success: true,
     message: "Dispatcher deleted successfully",
     data: null,
+  });
+});
+
+export const allCompany = catchAsync(async(req,res)=>{
+  const company = Company.find();
+    sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Company fetched successfully",
+    data: company,
+  });
+})
+export const getDashboardData = catchAsync(async (req, res, next) => {
+  const companyToken = req.user.companyToken;
+
+  if (!companyToken) {
+    return next(new AppError("Company token missing", 400));
+  }
+
+  // -----------------------------
+  // 1. TOTAL COMPANIES
+  // -----------------------------
+  const totalCompanies = await Company.countDocuments({
+    owner: req.user._id, // or your relation
+  });
+
+  // -----------------------------
+  // 2. MONTHLY EARNINGS
+  // -----------------------------
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  const monthlyEarningsData = await paymentInfo.aggregate([
+    { $match: { companyToken: new mongoose.Types.ObjectId(companyToken), createdAt: { $gte: startOfMonth } } },
+    { $group: { _id: null, total: { $sum: "$amount" } } },
+  ]);
+
+  const earningsThisMonth = monthlyEarningsData[0]?.total || 0;
+
+  // -----------------------------
+  // 3. ANNUAL EARNINGS
+  // -----------------------------
+  const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+
+  const annualEarningsData = await paymentInfo.aggregate([
+    { $match: { companyToken: new mongoose.Types.ObjectId(companyToken), createdAt: { $gte: startOfYear } } },
+    { $group: { _id: null, total: { $sum: "$amount" } } },
+  ]);
+
+  const annualEarnings = annualEarningsData[0]?.total || 0;
+
+  // -----------------------------
+  // 4. TOP COMPANIES (list)
+  // -----------------------------
+  const topCompanies = await Company.aggregate([
+    {
+      $lookup: {
+        from: "loads",
+        localField: "_id",
+        foreignField: "companyToken",
+        as: "deliveries",
+      },
+    },
+    {
+      $addFields: {
+        totalDelivery: { $size: "$deliveries" },
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        plan: 1,
+        totalDelivery: 1,
+      },
+    },
+    { $sort: { totalDelivery: -1 } },
+    { $limit: 15 },
+  ]);
+
+  // -----------------------------
+  // 5. RETURN FULL DASHBOARD RESPONSE
+  // -----------------------------
+  return sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Dashboard data fetched successfully",
+    data: {
+      totalCompanies,
+      earningsThisMonth,
+      annualEarnings,
+      topCompanies,
+    },
   });
 });
