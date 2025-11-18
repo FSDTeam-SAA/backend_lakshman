@@ -1,23 +1,23 @@
 import express from "express";
 import {
+  allCompany,
   createDispatcher,
   createDriver,
   deleteDispatcher,
   deleteDriver,
+  getDashboardData,
   getDispatcherById,
   getDispatchers,
   getDriverById,
   getDrivers,
   updateDispatcher,
-  updateDriver,
-  allCompany,
-  getDashboardData
+  updateDriver
 } from "../controller/company.controller.js";
-import { protect, isCompany } from "../middleware/auth.middleware.js";
+import { protect } from "../middleware/auth.middleware.js";
 import upload from "../middleware/multer.middleware.js";
 
 const router = express.Router();
-router.use(protect, isCompany);
+router.use(protect);
 
 router.post("/create-driver", upload.single("avatar"), createDriver);
 router.get("/driver", getDrivers);
