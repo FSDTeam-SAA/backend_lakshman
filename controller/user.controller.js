@@ -234,7 +234,6 @@ export const updateProfile = catchAsync(async (req, res, next) => {
         "email",
         "uniqueCode",
         "information",
-        "category",
       ];
       imageField = "logo";
       break;
