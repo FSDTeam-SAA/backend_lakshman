@@ -24,7 +24,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
   const { role } = req.user;
 
   let profile = null;
-  let dashboard = null
+  let dashboard = null;
 
   switch (role) {
     case "user":
@@ -33,8 +33,10 @@ export const getProfile = catchAsync(async (req, res, next) => {
 
     case "company": {
       // 1️⃣ Get company info
-      const company = await Company.findOne({ owner: userId })
-        .populate("owner", "-password -refreshToken");
+      const company = await Company.findOne({ owner: userId }).populate(
+        "owner",
+        "-password -refreshToken"
+      );
 
       if (!company) throw new AppError(404, "Company not found");
 
@@ -94,7 +96,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
             total: { $sum: "$askPrice" },
           },
         },
-        { $sort: { "_id": 1 } },
+        { $sort: { _id: 1 } },
       ]);
       console.log(weeklyRevenue);
 
@@ -149,22 +151,27 @@ export const getProfile = catchAsync(async (req, res, next) => {
       profile = { ...dispatcher.toObject(), dashboard };
       break;
 
-        case "driver":
+    case "driver":
       const driver = await Driver.findOne({ user: userId })
         .populate("user", "-password -refreshToken")
         .populate("company", "name email logo");
 
       if (!driver) throw new AppError(404, "Driver not found");
 
-      // All loads assigned to this driver
-      const assignedLoads = await Load.find({ driver: userId }).sort({
+      const excludedStatuses = ["delivered", "driver_delivered"];
+
+      // All active loads assigned to this driver (excluding delivered statuses)
+      const assignedLoads = await Load.find({
+        driver: userId,
+        orderStatus: { $nin: excludedStatuses },
+      }).sort({
         createdAt: -1,
       });
 
-      // Current active load (not yet delivered)
+      // Current active load (not yet delivered) - remains the same
       const currentLoad = await Load.findOne({
         driver: userId,
-        orderStatus: { $nin: ["delivered", "driver_delivered"] },
+        orderStatus: { $nin: excludedStatuses },
       }).sort({ createdAt: -1 });
 
       dashboard = {
@@ -203,7 +210,7 @@ export const updateProfile = catchAsync(async (req, res, next) => {
   const userId = req.user._id;
   const { role } = req.user;
 
-  console.log("updateProfile" , req.body);
+  console.log("updateProfile", req.body);
 
   let allowedFields = [];
   let imageField = null;
