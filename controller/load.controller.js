@@ -6,6 +6,7 @@ import AppError from "../errors/AppError.js";
 import httpStatus from "http-status";
 import { Dispatcher } from "../model/dispatcher.model.js";
 import { Driver } from "../model/driver.model.js";
+import { Notification } from "../model/notification.model.js";
 
 export const createLoad = catchAsync(async (req, res, next) => {
   const {
@@ -57,6 +58,13 @@ export const createLoad = catchAsync(async (req, res, next) => {
     pickupDate,
     note,
   });
+
+  const notification = await Notification.create({
+    user: company.owner,
+    title: "Load Created",
+    message: "SomeOne Created A New Load For Your Company",
+    type: "Request"
+  })
 
   sendResponse(res, {
     statusCode: 200,
