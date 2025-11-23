@@ -7,6 +7,7 @@ import loadRoute from "../route/load.route.js";
 import paymentRoute from "../route/payment.route.js";
 import planRoute from "../route/plan.route.js";
 import chatRoute from "../route/chat.route.js";
+import notificationRoute from "../route/notification.route.js";
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use("/load", loadRoute);
 router.use("/payment", paymentRoute);
 router.use("/plan", planRoute);
 router.use("/chat", chatRoute);
+router.use("/notification", notificationRoute);
 
 export default router;
