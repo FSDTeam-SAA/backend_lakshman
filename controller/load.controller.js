@@ -46,6 +46,9 @@ export const createLoad = catchAsync(async (req, res, next) => {
     }
   }
 
+  // Get all dispatchers associated with the company
+  const dispatchers = await Dispatcher.find({ company: company._id });
+
   // Create a new load record
   const newLoad = await Load.create({
     title,
@@ -59,12 +62,41 @@ export const createLoad = catchAsync(async (req, res, next) => {
     note,
   });
 
-  const notification = await Notification.create({
-    user: company.owner,
+  const notifications = [];
+
+  notifications.push({
+    user: req.user._id,
+    company: company._id,
+    dispatcher: null,
     title: "Load Created",
-    message: "SomeOne Created A New Load For Your Company",
-    type: "Request"
-  })
+    message: "You created a new load.",
+    type: "User",
+  });
+
+  // 2. Notify the COMPANY OWNER
+  notifications.push({
+    user: company.owner,
+    company: company._id,
+    dispatcher: null,
+    title: "Load Created",
+    message: "A user created a new load under your company.",
+    type: "Company",
+  });
+
+  // 3. Notify ALL Dispatchers
+  dispatchers.forEach((dispatcher) => {
+    notifications.push({
+      user: dispatcher.user,
+      company: company._id,
+      dispatcher: dispatcher._id,
+      title: "Load Created",
+      message: "A new load was created for your company.",
+      type: "Dispatcher",
+    });
+  });
+
+  // Insert all notifications at once
+  await Notification.insertMany(notifications);
 
   sendResponse(res, {
     statusCode: 200,
@@ -246,16 +278,32 @@ export const assignDriverController = catchAsync(async (req, res) => {
   const { loadId } = req.params;
   const { driverId } = req.body;
 
+  // Check load
   const load = await Load.findById(loadId);
   if (!load) {
     throw new AppError(httpStatus.NOT_FOUND, "Load not found");
   }
 
+  // Assign driver to load
   load.driver = driverId;
   load.orderStatus = "driver_pending";
   await load.save();
 
-  sendResponse(res, {
+  // Fetch driver details
+  const driver = await Driver.findById(driverId);
+  if (!driver) {
+    throw new AppError(httpStatus.NOT_FOUND, "Driver not found");
+  }
+
+  // Create notification for the driver
+  await Notification.create({
+    user: driver.user,
+    title: "New Load Assigned",
+    message: "A new load has been assigned to you. Please check your loads.",
+    type: "Assignment",
+  });
+
+  return sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Driver assigned successfully",

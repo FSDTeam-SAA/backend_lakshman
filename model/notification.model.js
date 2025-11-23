@@ -5,15 +5,24 @@ const notificationSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+    },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+    },
+    dispatcher: {
+      type: Schema.Types.ObjectId,
+      ref: "Dispatcher",
+    },
+    driver: {
+      type: Schema.Types.ObjectId,
+      ref: "Driver",
     },
     title: {
       type: String,
-      required: true,
     },
     message: {
       type: String,
-      required: true,
     },
     type: {
       type: String,

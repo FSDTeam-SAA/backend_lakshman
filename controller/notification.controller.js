@@ -7,24 +7,34 @@ import { Company } from "../model/company.model.js";
 import { Dispatcher } from "../model/dispatcher.model.js";
 
 export const getUserNotifications = catchAsync(async (req, res) => {
-  let notifications
+  let conditions = [];
 
-  notifications = await Notification.find({ user: req.user._id }).sort({
-    createdAt: -1,
-  });
+  // universal: user field always matches
+  conditions.push({ user: req.user._id });
+
+  // Dispatcher notifications
   if (req.user.role === "dispatcher") {
-    let com = await Dispatcher.findOne({ user: req.user._id }).populate("company")
-    notifications = await Notification.find({
-      $or: [
-        { user: req.user._id },
-        { user: com.company.owner }
-      ]
-    }).sort({ createdAt: -1 });
-
+    const dispatcher = await Dispatcher.findOne({ user: req.user._id });
+    if (dispatcher) {
+      conditions.push({ dispatcher: dispatcher._id });
+      conditions.push({ company: dispatcher.company });
+    }
   }
 
+  // Company owner notifications
+  if (req.user.role === "company") {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (company) {
+      conditions.push({ company: company._id });
+    }
+  }
+
+  const notifications = await Notification.find({
+    $or: conditions,
+  }).sort({ createdAt: -1 });
+
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: 200,
     success: true,
     message: "Notifications fetched successfully",
     data: notifications,
