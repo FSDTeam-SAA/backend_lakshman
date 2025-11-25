@@ -3,7 +3,10 @@ import mongoose from "mongoose";
 const categorySchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    image: { type: String },
+    image: {
+      public_id: { type: String, default: "" },
+      url: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );
