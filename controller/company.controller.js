@@ -1,15 +1,14 @@
-import { Driver } from "../model/driver.model.js";
+import httpStatus from "http-status";
+import { isValidObjectId } from "mongoose";
+import AppError from "../errors/AppError.js";
+import { Company } from "../model/company.model.js";
 import { Dispatcher } from "../model/dispatcher.model.js";
+import { Driver } from "../model/driver.model.js";
 import { paymentInfo } from "../model/payment.model.js";
 import { User } from "../model/user.model.js";
-import httpStatus from "http-status";
-import AppError from "../errors/AppError.js";
-import sendResponse from "../utils/sendResponse.js";
 import catchAsync from "../utils/catchAsync.js";
-import bcrypt from "bcryptjs";
-import { isValidObjectId } from "mongoose";
 import { uploadOnCloudinary } from "../utils/commonMethod.js";
-import { Company } from "../model/company.model.js";
+import sendResponse from "../utils/sendResponse.js";
 
 // Default password
 const DEFAULT_DRIVER_PASSWORD = process.env.DEFAULT_PASSWORD || "Driver@123";
@@ -305,7 +304,7 @@ export const deleteDispatcher = catchAsync(async (req, res) => {
 });
 
 export const allCompany = catchAsync(async(req,res)=>{
-  const company = Company.find();
+  const company = await Company.find();
     sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
