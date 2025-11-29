@@ -33,7 +33,7 @@ const loadSchema = new mongoose.Schema(
         "delivered", // order completed
 
         // Driver workflow
-        "driver_pending", // waiting for driver
+        "driver_assigned", // waiting for driver
         "pickup", // driver picked up
         "on_the_way", // driver en route
         "driver_delivered", // driver delivered
@@ -41,7 +41,7 @@ const loadSchema = new mongoose.Schema(
         // Ask price workflow
         "ask_pending", // waiting for user to ask price
         "asked", // price requested
-        "+", // price accepted
+        "accepted", // price accepted
         "rejected", // price rejected
       ],
       default: "pending",

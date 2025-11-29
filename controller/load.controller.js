@@ -286,7 +286,7 @@ export const assignDriverController = catchAsync(async (req, res) => {
 
   // Assign driver to load
   load.driver = driverId;
-  load.orderStatus = "driver_pending";
+  load.orderStatus = "driver_assigned";
   await load.save();
 
   // Fetch driver details
