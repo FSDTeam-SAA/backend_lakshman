@@ -1,7 +1,9 @@
 
+import Stripe from 'stripe'
+import { Load } from '../model/load.model.js'
 import { paymentInfo } from '../model/payment.model.js'
 import { User } from '../model/user.model.js'
-import Stripe from 'stripe'
+import c from 'config'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
@@ -154,6 +156,17 @@ export const confirmPayment = async (req, res) => {
       { paymentStatus: 'complete' },
       { new: true }
     )
+    console.log('paymentRecord', paymentRecord)
+    if (paymentRecord.loadId) {
+    const loadId = await Load.findOneAndUpdate(
+      { _id: paymentRecord.loadId },
+      { orderStatus: 'processing' },
+      { new: true }
+    )
+
+
+
+  }
 
     if (!paymentRecord) {
       return res.status(404).json({ error: 'Payment record not found in database.' })
