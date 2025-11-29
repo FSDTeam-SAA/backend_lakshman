@@ -31,7 +31,7 @@ export const getUserNotifications = catchAsync(async (req, res) => {
 
   const notifications = await Notification.find({
     $or: conditions,
-  }).sort({ createdAt: -1 });
+  }).sort({ createdAt: -1 }).populate("user dispatcher driver");
 
   sendResponse(res, {
     statusCode: 200,

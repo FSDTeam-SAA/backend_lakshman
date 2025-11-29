@@ -70,7 +70,7 @@ export const sendMessage = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     message: "Message sent successfully",
     success: true,
-    data: chat,
+    data: chat12.messages[0],
   });
 });
 
