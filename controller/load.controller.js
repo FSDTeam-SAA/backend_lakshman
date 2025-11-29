@@ -1,12 +1,12 @@
-import catchAsync from "../utils/catchAsync.js";
-import { Load } from "../model/load.model.js";
-import { Company } from "../model/company.model.js"; // Assuming you have the company model
-import sendResponse from "../utils/sendResponse.js";
-import AppError from "../errors/AppError.js";
 import httpStatus from "http-status";
+import AppError from "../errors/AppError.js";
+import { Company } from "../model/company.model.js"; // Assuming you have the company model
 import { Dispatcher } from "../model/dispatcher.model.js";
 import { Driver } from "../model/driver.model.js";
+import { Load } from "../model/load.model.js";
 import { Notification } from "../model/notification.model.js";
+import catchAsync from "../utils/catchAsync.js";
+import sendResponse from "../utils/sendResponse.js";
 
 export const createLoad = catchAsync(async (req, res, next) => {
   const {
@@ -161,7 +161,7 @@ export const getLoadById = catchAsync(async (req, res) => {
   const load = await Load.findById({
     _id: loadId,
     loadBy: userId,
-  }).populate("companyToken loadBy");
+  }).populate("companyToken loadBy driver");
 
   if (!load) {
     throw new AppError(httpStatus.NOT_FOUND, "Load not found");
@@ -285,16 +285,16 @@ export const assignDriverController = catchAsync(async (req, res) => {
   }
 
   // Assign driver to load
-  load.driver = driverId;
-  load.orderStatus = "driver_assigned";
-  await load.save();
+  
 
   // Fetch driver details
   const driver = await Driver.findById(driverId);
   if (!driver) {
     throw new AppError(httpStatus.NOT_FOUND, "Driver not found");
   }
-
+  load.driver = driver.user;
+  load.orderStatus = "driver_assigned";
+  await load.save();
   // Create notification for the driver
   await Notification.create({
     user: driver.user,
