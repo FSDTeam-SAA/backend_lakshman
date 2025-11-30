@@ -264,7 +264,16 @@ export const updateProfile = catchAsync(async (req, res, next) => {
     if (!image) {
       throw new AppError(httpStatus.BAD_REQUEST, "Image upload failed");
     }
-    updates[imageField] = image.secure_url;
+    if (role === "user" && imageField === "avatar") {
+      updates[imageField] = {
+        public_id: image.public_id,
+        url: image.secure_url,
+      };
+    }
+    // Other roles → save only secure_url
+    else {
+      updates[imageField] = image.secure_url;
+    }
   }
 
   let updatedUser = null;
