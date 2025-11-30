@@ -310,3 +310,31 @@ export const assignDriverController = catchAsync(async (req, res) => {
     data: load,
   });
 });
+
+export const completeLoad = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const userId = req.user._id;
+
+  const { orderStatus } =
+    req.body;
+
+  const load = await Load.findById({
+    _id: loadId,
+  });
+
+  if (!load) {
+    throw new AppError(httpStatus.NOT_FOUND, "Load not found");
+  }
+
+  load.orderStatus = orderStatus;
+
+
+  await load.save();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Load updated successfully",
+    data: load,
+  });
+});

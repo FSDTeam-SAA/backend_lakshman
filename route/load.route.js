@@ -8,6 +8,7 @@ import {
   askPriceController,
   acceptRejectPriceController,
   assignDriverController,
+  completeLoad,
 } from "../controller/load.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -19,6 +20,7 @@ router.post("/", createLoad);
 router.get("/", getAllLoads);
 router.get("/:loadId", getLoadById);
 router.patch("/:loadId/update", updateLoad);
+router.patch("/:loadId/compete", completeLoad);
 router.delete("/:loadId/delete", deleteLoad);
 router.patch("/:loadId/ask-price", askPriceController);
 router.patch("/:loadId/price-action", acceptRejectPriceController);
